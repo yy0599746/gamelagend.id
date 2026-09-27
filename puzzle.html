@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Puzzle 1000 Level — RajaGame</title>
+<style>
+  :root {
+    --bg: #0b1020;
+    --panel: #111a2e;
+    --text: #f7f8ff;
+    --gold: #f6c453;
+    --accent: #263665;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: radial-gradient(circle at 20% 0, #24356a 0, #0b1020 38%);
+    color: var(--text);
+    font-family: Inter, system-ui, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-x: hidden;
+  }
+  header {
+    width: 100%;
+    max-width: 800px;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .back-btn {
+    color: var(--gold);
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 14px;
+  }
+  .audio-btn {
+    background: #1e2b50;
+    color: var(--gold);
+    border: 1px solid #334367;
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: bold;
+  }
+  .container {
+    width: 100%;
+    max-width: 500px;
+    padding: 20px;
+    text-align: center;
+    position: relative;
+    z-index: 2;
+  }
+  .level-card {
+    background: var(--panel);
+    border: 1px solid #2b3958;
+    border-radius: 16px;
+    padding: 15px;
+    margin-bottom: 15px;
+  }
+  .level-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .char-tag {
+    background: #263665;
+    color: var(--gold);
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+  }
+  #board {
+    display: grid;
+    gap: 4px;
+    width: 100%;
+    max-width: 400px;
+    aspect-ratio: 1;
+    margin: 0 auto;
+    background: #080c1a;
+    padding: 6px;
+    border-radius: 12px;
+    border: 2px solid #334367;
+  }
+  .tile {
+    background-size: cover;
+    background-position: center;
+    border-radius: 6px;
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.1s ease;
+  }
+  .tile.empty {
+    background: #0b1020 !important;
+    border: 1px dashed #2b3958;
+    cursor: default;
+  }
+  .controls {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 15px;
+  }
+  button.action-btn {
+    background: linear-gradient(135deg, #f6c453, #ff8c4a);
+    color: #18120a;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  button.action-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  /* Canvas untuk Efek Bunga */
+  #flower-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 998;
+  }
+
+  /* ================= DESAIN MODAL KEMENANGAN ================= */
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(8, 12, 26, 0.85);
+    backdrop-filter: blur(8px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  .modal-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .modal-box {
+    background: linear-gradient(145deg, #17223a, #0b1020);
+    border: 2px solid var(--gold);
+    border-radius: 24px;
+    padding: 30px;
+    width: 90%;
+    max-width: 380px;
+    text-align: center;
+    box-shadow: 0 15px 35px rgba(246, 196, 83, 0.2);
+    transform: scale(0.7);
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  .modal-overlay.active .modal-box {
+    transform: scale(1);
+  }
+  .modal-icon {
+    font-size: 55px;
+    margin-bottom: 10px;
+    animation: bounce 1s infinite alternate;
+  }
+  .modal-title {
+    font-size: 26px;
+    color: var(--gold);
+    font-weight: 900;
+    text-shadow: 0 2px 10px rgba(246, 196, 83, 0.4);
+    margin-bottom: 8px;
+  }
+  .modal-sub {
+    font-size: 14px;
+    color: #cbd4eb;
+    margin-bottom: 20px;
+  }
+  .modal-btn {
+    background: linear-gradient(135deg, #f6c453, #ff8c4a);
+    color: #18120a;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 900;
+    cursor: pointer;
+    box-shadow: 0 5px 15px rgba(255, 140, 74, 0.3);
+    transition: transform 0.1s ease;
+  }
+  .modal-btn:active {
+    transform: scale(0.95);
+  }
+  @keyframes bounce {
+    from { transform: translateY(0); }
+    to { transform: translateY(-10px); }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="flower-canvas"></canvas>
+
+<!-- MODAL KEMENANGAN -->
+<div class="modal-overlay" id="win-modal">
+  <div class="modal-box">
+    <div class="modal-icon">🌸 🏆 🌸</div>
+    <div class="modal-title">LUAR BIASA!</div>
+    <div class="modal-sub" id="win-desc">Kamu berhasil menyelesaikan Level 1!</div>
+    <button class="modal-btn" onclick="nextLevelFromModal()">LANJUT LEVEL NEXT ➔</button>
+  </div>
+</div>
+
+<header>
+  <a href="./" class="back-btn">← Kembali ke Portal</a>
+  <h2 style="color:var(--gold);">RajaPuzzle</h2>
+  <button id="toggle-sound" class="audio-btn" onclick="toggleAudio()">🔊 Musik: ON</button>
+</header>
+
+<div class="container">
+  <div class="level-card">
+    <div class="level-info">
+      <h3>Level <span id="lvl-num">1</span> / 1000</h3>
+      <span class="char-tag" id="char-name">Doraemon</span>
+    </div>
+    <p id="grid-info" style="font-size:12px; color:#9ba8c7;">Ukuran: 3x3 | Kesulitan: Sangat Mudah</p>
+  </div>
+
+  <div id="board"></div>
+
+  <div class="controls">
+    <button class="action-btn" id="prev-btn" onclick="changeLevel(-1)">Level Sebelumnya</button>
+    <button class="action-btn" id="reset-btn" onclick="resetGame()">Acak Ulang</button>
+    <button class="action-btn" id="next-btn" onclick="changeLevel(1)">Level Berikutnya</button>
+  </div>
+</div>
+
+<script>
+  // ================= WEB AUDIO SYSTEM =================
+  let audioCtx = null;
+  let isMuted = false;
+  let bgmInterval = null;
+
+  function initAudio() {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      startBGM();
+    }
+  }
+
+  function toggleAudio() {
+    initAudio();
+    isMuted = !isMuted;
+    document.getElementById('toggle-sound').innerText = isMuted ? "🔇 Musik: OFF" : "🔊 Musik: ON";
+    if (isMuted) {
+      clearInterval(bgmInterval);
+      bgmInterval = null;
+    } else {
+      startBGM();
+    }
+  }
+
+  function playClickSound() {
+    if (isMuted) return;
+    initAudio();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.05);
+    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.05);
+  }
+
+  function playWinSound() {
+    if (isMuted) return;
+    initAudio();
+    const notes = [523.25, 659.25, 783.99, 1046.50];
+    notes.forEach((freq, idx) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.2, audioCtx.currentTime + idx * 0.12);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + idx * 0.12 + 0.25);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(audioCtx.currentTime + idx * 0.12);
+      osc.stop(audioCtx.currentTime + idx * 0.12 + 0.25);
+    });
+  }
+
+  function playLoseSound() {
+    if (isMuted) return;
+    initAudio();
+    const notes = [400, 350, 300, 220];
+    notes.forEach((freq, idx) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.15, audioCtx.currentTime + idx * 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + idx * 0.1 + 0.2);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(audioCtx.currentTime + idx * 0.1);
+      osc.stop(audioCtx.currentTime + idx * 0.1 + 0.2);
+    });
+  }
+
+  function startBGM() {
+    if (bgmInterval || isMuted) return;
+    const bgmNotes = [261.63, 329.63, 392.00, 329.63, 293.66, 349.23, 440.00, 349.23];
+    let noteIdx = 0;
+    bgmInterval = setInterval(() => {
+      if (isMuted || !audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = bgmNotes[noteIdx];
+      gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.35);
+      noteIdx = (noteIdx + 1) % bgmNotes.length;
+    }, 400);
+  }
+
+  // ================= EFEK BUNGA MEKAR =================
+  const canvas = document.getElementById('flower-canvas');
+  const ctx = canvas.getContext('2d');
+  let flowers = [];
+
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  class Flower {
+    constructor(x, y) {
+      this.x = x;
+      this.y = y;
+      this.size = Math.random() * 12 + 8;
+      this.speedX = (Math.random() - 0.5) * 8;
+      this.speedY = (Math.random() - 0.5) * 8 - 3;
+      this.gravity = 0.12;
+      this.color = `hsl(${Math.random() * 360}, 80%, 70%)`;
+      this.petals = Math.floor(Math.random() * 3) + 5;
+      this.angle = Math.random() * Math.PI * 2;
+      this.spin = (Math.random() - 0.5) * 0.1;
+      this.alpha = 1;
+    }
+
+    update() {
+      this.x += this.speedX;
+      this.y += this.speedY;
+      this.speedY += this.gravity;
+      this.angle += this.spin;
+      this.alpha -= 0.008;
+    }
+
+    draw() {
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.rotate(this.angle);
+      ctx.globalAlpha = Math.max(0, this.alpha);
+      ctx.fillStyle = this.color;
+
+      for (let i = 0; i < this.petals; i++) {
+        ctx.rotate((Math.PI * 2) / this.petals);
+        ctx.beginPath();
+        ctx.arc(0, this.size / 2, this.size / 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.beginPath();
+      ctx.arc(0, 0, this.size / 4, 0, Math.PI * 2);
+      ctx.fillStyle = '#f6c453';
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  function launchFlowerEffect() {
+    flowers = [];
+    const totalFlowers = 90;
+    const startX = window.innerWidth / 2;
+    const startY = window.innerHeight / 2;
+
+    for (let i = 0; i < totalFlowers; i++) {
+      flowers.push(new Flower(startX, startY));
+    }
+    animateFlowers();
+  }
+
+  function animateFlowers() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    flowers.forEach((flower, index) => {
+      flower.update();
+      flower.draw();
+      if (flower.alpha <= 0) {
+        flowers.splice(index, 1);
+      }
+    });
+
+    if (flowers.length > 0) {
+      requestAnimationFrame(animateFlowers);
+    }
+  }
+
+  // ================= GAME LOGIC =================
+  const characters = [
+    { name: 'Doraemon', img: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=600&auto=format&fit=crop' },
+    { name: 'Roronoa Zoro', img: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop' },
+    { name: 'Monkey D. Luffy', img: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&auto=format&fit=crop' },
+    { name: 'Naruto Uzumaki', img: 'https://images.unsplash.com/photo-1563089145-599997674d42?w=600&auto=format&fit=crop' },
+    { name: 'Goku', img: 'https://images.unsplash.com/photo-1535223289827-42f1e9919769?w=600&auto=format&fit=crop' }
+  ];
+
+  let currentLevel = 1;
+  let gridSize = 3;
+  let tiles = [];
+  let emptyIdx = 0;
+
+  function getLevelConfig(lvl) {
+    let size = 3;
+    let diff = "Mudah";
+    if (lvl > 800) { size = 7; diff = "Ekstrem / Legend"; }
+    else if (lvl > 500) { size = 6; diff = "Sangat Sulit"; }
+    else if (lvl > 250) { size = 5; diff = "Sulit"; }
+    else if (lvl > 100) { size = 4; diff = "Sedang"; }
+
+    const char = characters[(lvl - 1) % characters.length];
+    return { size, diff, char };
+  }
+
+  function loadLevel() {
+    const config = getLevelConfig(currentLevel);
+    gridSize = config.size;
+
+    document.getElementById('lvl-num').innerText = currentLevel;
+    document.getElementById('char-name').innerText = config.char.name;
+    document.getElementById('grid-info').innerText = `Ukuran: ${gridSize}x${gridSize} | Kesulitan: ${config.diff}`;
+    
+    document.getElementById('prev-btn').disabled = currentLevel === 1;
+    document.getElementById('next-btn').disabled = currentLevel === 1000;
+
+    const board = document.getElementById('board');
+    board.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+    board.innerHTML = '';
+
+    const totalTiles = gridSize * gridSize;
+    tiles = Array.from({ length: totalTiles }, (_, i) => i);
+    emptyIdx = totalTiles - 1;
+
+    const shuffleSteps = currentLevel * 10;
+    for (let i = 0; i < shuffleSteps; i++) {
+      const validMoves = getValidMoves();
+      const randomMove = validMoves[Math.floor(Math.random() * validMoves.length)];
+      [tiles[emptyIdx], tiles[randomMove]] = [tiles[randomMove], tiles[emptyIdx]];
+      emptyIdx = randomMove;
+    }
+
+    renderBoard(config.char.img);
+  }
+
+  function resetGame() {
+    playClickSound();
+    playLoseSound();
+    loadLevel();
+  }
+
+  function getValidMoves() {
+    const moves = [];
+    const row = Math.floor(emptyIdx / gridSize);
+    const col = emptyIdx % gridSize;
+
+    if (row > 0) moves.push(emptyIdx - gridSize);
+    if (row < gridSize - 1) moves.push(emptyIdx + gridSize);
+    if (col > 0) moves.push(emptyIdx - 1);
+    if (col < gridSize - 1) moves.push(emptyIdx + 1);
+
+    return moves;
+  }
+
+  function renderBoard(imgUrl) {
+    const board = document.getElementById('board');
+    board.innerHTML = '';
+
+    tiles.forEach((tileValue, index) => {
+      const tile = document.createElement('div');
+      tile.classList.add('tile');
+
+      if (tileValue === gridSize * gridSize - 1) {
+        tile.classList.add('empty');
+      } else {
+        const row = Math.floor(tileValue / gridSize);
+        const col = tileValue % gridSize;
+        const percentX = (col / (gridSize - 1)) * 100;
+        const percentY = (row / (gridSize - 1)) * 100;
+
+        tile.style.backgroundImage = `url('${imgUrl}')`;
+        tile.style.backgroundSize = `${gridSize * 100}% ${gridSize * 100}%`;
+        tile.style.backgroundPosition = `${percentX}% ${percentY}%`;
+
+        tile.onclick = () => moveTile(index);
+      }
+      board.appendChild(tile);
+    });
+  }
+
+  function moveTile(index) {
+    initAudio();
+    const validMoves = getValidMoves();
+    if (validMoves.includes(index)) {
+      playClickSound();
+      [tiles[emptyIdx], tiles[index]] = [tiles[index], tiles[emptyIdx]];
+      emptyIdx = index;
+      renderBoard(getLevelConfig(currentLevel).char.img);
+
+      if (checkWin()) {
+        setTimeout(() => {
+          playWinSound();
+          launchFlowerEffect();
+          showWinModal();
+        }, 150);
+      }
+    }
+  }
+
+  function checkWin() {
+    return tiles.every((val, idx) => val === idx);
+  }
+
+  function showWinModal() {
+    document.getElementById('win-desc').innerText = `Selamat! Kamu berhasil menaklukkan Level ${currentLevel}!`;
+    document.getElementById('win-modal').classList.add('active');
+  }
+
+  function nextLevelFromModal() {
+    playClickSound();
+    document.getElementById('win-modal').classList.remove('active');
+    if (currentLevel < 1000) {
+      currentLevel++;
+      loadLevel();
+    }
+  }
+
+  function changeLevel(delta) {
+    playClickSound();
+    currentLevel += delta;
+    if (currentLevel < 1) currentLevel = 1;
+    if (currentLevel > 1000) currentLevel = 1000;
+    loadLevel();
+  }
+
+  window.addEventListener('click', () => initAudio(), { once: true });
+
+  loadLevel();
+</script>
+
+</body>
+</html>
