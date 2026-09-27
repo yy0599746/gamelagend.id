@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ular Tangga Kerajaan 3D</title>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+    margin:0;
+    min-height:100vh;
+    font-family:Georgia,"Times New Roman",serif;
+    background:
+        radial-gradient(circle at 50% 0%,#82d7ff 0,#367bc7 38%,#132957 100%);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:22px;
+    overflow-x:hidden;
+}
+
+.game{
+    width:min(1120px,97vw);
+    padding:18px;
+    border-radius:32px;
+    background:linear-gradient(145deg,#fff3ad,#c98517 25%,#ffe27a 52%,#9a5a08 100%);
+    border:6px solid #744006;
+    box-shadow:
+        0 20px 50px rgba(0,0,0,.55),
+        inset 0 0 0 3px #ffe991,
+        inset 0 0 30px rgba(90,35,0,.45);
+}
+
+.title{
+    text-align:center;
+    color:#fff3a1;
+    font-size:clamp(30px,5vw,58px);
+    line-height:1;
+    margin:3px 0 6px;
+    letter-spacing:3px;
+    text-shadow:
+        3px 3px 0 #542400,
+        0 5px 8px rgba(0,0,0,.45);
+}
+
+.subtitle{
+    text-align:center;
+    color:#fff;
+    font-weight:bold;
+    font-size:clamp(14px,2vw,20px);
+    margin-bottom:15px;
+    text-shadow:2px 2px 3px #3b1c00;
+}
+
+.info{
+    display:flex;
+    justify-content:center;
+    gap:14px;
+    flex-wrap:wrap;
+    margin-bottom:17px;
+}
+
+.player-info{
+    color:#fff;
+    font-weight:bold;
+    padding:9px 18px;
+    border-radius:14px;
+    border:3px solid #fff0a8;
+    box-shadow:0 4px 8px rgba(0,0,0,.4),inset 0 0 10px rgba(255,255,255,.25);
+    text-shadow:2px 2px 2px #421500;
+}
+.p1info{background:linear-gradient(#ef4b46,#8c0b0b)}
+.p2info{background:linear-gradient(#42aaf7,#07539e)}
+
+#board{
+    position:relative;
+    width:min(88vw,850px);
+    aspect-ratio:1/1;
+    margin:auto;
+    padding:5.6%;
+    border-radius:26px;
+    background:
+        linear-gradient(145deg,#704008,#e3a52f 20%,#9d5c0a 55%,#e7b641);
+    border:7px solid #6d3c05;
+    box-shadow:
+        0 16px 28px rgba(0,0,0,.55),
+        inset 0 0 0 3px #ffe27a,
+        inset 0 0 28px rgba(70,25,0,.7);
+}
+
+/* Hiasan luar papan */
+#board:before,
+#board:after{
+    content:"";
+    position:absolute;
+    z-index:0;
+    width:10%;
+    height:10%;
+    border-radius:50%;
+    background:radial-gradient(circle at 35% 30%,#fff6ad,#3f8fe9 35%,#093b83 70%,#5e3305 72%);
+    border:4px solid #e8b63e;
+    box-shadow:0 4px 10px rgba(0,0,0,.55);
+}
+#board:before{left:1%;bottom:1%}
+#board:after{right:1%;bottom:1%}
+
+#boardGrid{
+    position:relative;
+    z-index:2;
+    width:100%;
+    height:100%;
+    display:grid;
+    grid-template-columns:repeat(10,1fr);
+    grid-template-rows:repeat(10,1fr);
+    gap:4px;
+}
+
+/* Kotak 3D */
+.cell{
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:8px;
+    font-size:clamp(13px,2.15vw,28px);
+    font-weight:900;
+    color:#fff6cc;
+    text-shadow:2px 3px 0 #572300,0 0 5px rgba(0,0,0,.55);
+    border:2px solid rgba(255,255,255,.62);
+    box-shadow:
+        inset 2px 2px 0 rgba(255,255,255,.48),
+        inset -3px -4px 0 rgba(0,0,0,.24),
+        0 5px 0 rgba(70,30,0,.62),
+        0 7px 8px rgba(0,0,0,.32);
+    transform:translateZ(0);
+    transition:filter .15s,transform .15s;
+    overflow:hidden;
+}
+.cell:hover{
+    filter:brightness(1.12);
+    transform:translateY(-2px);
+    z-index:5;
+}
+.cell::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:linear-gradient(135deg,rgba(255,255,255,.16),transparent 38%,rgba(0,0,0,.10));
+    pointer-events:none;
+}
+.n1{background:linear-gradient(145deg,#36d86a,#109442)}
+.n2{background:linear-gradient(145deg,#ffd943,#e29406)}
+.n3{background:linear-gradient(145deg,#ff6258,#c92328)}
+.n4{background:linear-gradient(145deg,#39aaff,#1269cc)}
+.n5{background:linear-gradient(145deg,#ad60eb,#6933ad)}
+
+.cell-number{position:relative;z-index:2}
+.start-cell{
+    background:linear-gradient(145deg,#42dc65,#08782f)!important;
+    border-color:#ffe16b;
+}
+.finish-cell{
+    background:linear-gradient(145deg,#ffe24a,#d77c00)!important;
+    border-color:#fff1a1;
+    box-shadow:
+        inset 2px 2px 0 #fff,
+        inset -4px -5px 0 rgba(100,40,0,.28),
+        0 5px 0 #713300,
+        0 0 18px rgba(255,220,50,.8);
+}
+
+/* SVG ular dan tangga */
+#decor{
+    position:absolute;
+    z-index:8;
+    left:5.6%;
+    top:5.6%;
+    width:88.8%;
+    height:88.8%;
+    pointer-events:none;
+    overflow:visible;
+}
+.ladder-rail{
+    stroke:#8b4a09;
+    stroke-width:2.4;
+    stroke-linecap:round;
+}
+.ladder-highlight{
+    stroke:#ffd76b;
+    stroke-width:1.1;
+    stroke-linecap:round;
+}
+.rung{
+    stroke:#f5b62f;
+    stroke-width:1.6;
+    stroke-linecap:round;
+}
+.snake-shadow{
+    fill:none;
+    stroke:rgba(0,0,0,.32);
+    stroke-width:5.8;
+    stroke-linecap:round;
+}
+.snake-body{
+    fill:none;
+    stroke-width:5;
+    stroke-linecap:round;
+}
+.snake-stripe{
+    fill:none;
+    stroke:rgba(255,255,255,.45);
+    stroke-width:1.3;
+    stroke-linecap:round;
+}
+.snake-eye{fill:#fff;stroke:#111;stroke-width:.7}
+.snake-pupil{fill:#111}
+.snake-tongue{stroke:#d10d18;stroke-width:1.1;stroke-linecap:round}
+
+/* Pion */
+.horse{
+    position:absolute;
+    z-index:30;
+    width:6.0%;
+    height:6.0%;
+    min-width:32px;
+    min-height:32px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:clamp(24px,3.9vw,41px);
+    pointer-events:none;
+    transition:left .26s cubic-bezier(.2,.8,.3,1),top .26s cubic-bezier(.2,.8,.3,1);
+    filter:drop-shadow(0 6px 4px rgba(0,0,0,.7));
+}
+.horse1{text-shadow:0 0 3px #fff,2px 2px 0 #a00000}
+.horse2{text-shadow:0 0 3px #fff,2px 2px 0 #0056ad}
+.jump{animation:jump .32s ease-in-out}
+@keyframes jump{
+    0%{transform:translateY(0) scale(1) rotate(0)}
+    30%{transform:translateY(-17px) scale(1.13) rotate(-6deg)}
+    55%{transform:translateY(-28px) scale(1.2) rotate(6deg)}
+    80%{transform:translateY(-10px) scale(1.08) rotate(-3deg)}
+    100%{transform:translateY(0) scale(1) rotate(0)}
+}
+
+.controls{
+    margin-top:19px;
+    padding:16px;
+    border-radius:20px;
+    text-align:center;
+    background:linear-gradient(145deg,#703804,#bb7413,#653003);
+    border:4px solid #f5d36a;
+    box-shadow:inset 0 0 16px rgba(0,0,0,.5),0 7px 15px rgba(0,0,0,.4);
+}
+#dice{
+    min-height:65px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:52px;
+}
+#turn,#message{
+    color:#fff6bc;
+    font-weight:bold;
+    text-shadow:2px 2px 3px #301300;
+}
+#message{min-height:25px}
+button{
+    padding:12px 24px;
+    margin:4px;
+    border:3px solid #ffe07a;
+    border-radius:13px;
+    color:white;
+    font-size:17px;
+    font-weight:bold;
+    cursor:pointer;
+    box-shadow:0 5px 0 #602c00,0 8px 12px rgba(0,0,0,.35);
+    transition:.15s;
+}
+#rollButton{background:linear-gradient(#ffd43d,#d67b00)}
+#resetButton{background:linear-gradient(#ef514b,#8b0909)}
+button:hover{transform:translateY(-2px)}
+button:active{transform:translateY(3px);box-shadow:0 2px 0 #602c00}
+button:disabled{background:#777;cursor:not-allowed;box-shadow:none}
+.legend{text-align:center;color:#fff;font-weight:bold;margin-top:10px;text-shadow:2px 2px 3px #222}
+
+@media(max-width:600px){
+    body{padding:7px}
+    .game{padding:9px;border-width:3px}
+    .title{font-size:31px}
+    .player-info{font-size:13px;padding:7px 10px}
+    #board{border-width:4px;padding:5.7%}
+    #boardGrid{gap:2px}
+    .cell{border-width:1px;border-radius:5px}
+    button{font-size:14px;padding:10px 17px}
+}
+
+.music-controls{
+    margin:12px auto 0;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+}
+#musicButton{
+    background:linear-gradient(#5ecbff,#1769b0);
+    border-color:#a9e8ff;
+}
+.music-label{
+    color:#fff6bc;
+    font-weight:bold;
+    text-shadow:2px 2px 3px #301300;
+}
+
+.flower-burst{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:9999}.flower{position:absolute;top:50%;left:50%;font-size:28px;animation:flowerFly 1.8s ease-out forwards}@keyframes flowerFly{0%{transform:translate(-50%,-50%) scale(.2);opacity:0}12%{opacity:1}100%{transform:translate(calc(-50% + var(--x)),calc(-50% + var(--y))) scale(1.15) rotate(var(--r));opacity:0}}</style>
+</head>
+
+<body>
+
+<div class="game">
+
+    <div class="title">👑 ULAR TANGGA 👑</div>
+    <div class="subtitle">🏰 Petualangan Menuju Istana 🏰</div>
+
+    <div class="info">
+        <div class="player-info p1info">🔴 🐴 Pemain 1: <span id="pos1">1</span></div>
+        <div class="player-info p2info">🔵 🐴 Pemain 2: <span id="pos2">1</span></div>
+    </div>
+
+    <div id="board">
+        <div id="boardGrid"></div>
+
+        <!-- Ular dan tangga dibuat langsung dengan SVG -->
+        <svg id="decor" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+
+        <div id="horse1" class="horse horse1">🐴</div>
+        <div id="horse2" class="horse horse2">🐴</div>
+    </div>
+
+    <div class="controls">
+        <div id="dice">🎲</div>
+        <div id="turn">Giliran: 🐴 Pemain 1</div>
+
+        <button id="rollButton" onclick="rollDice()">🎲 LEMPAR DADU</button>
+        <button id="resetButton" onclick="resetGame()">🔄 MULAI ULANG</button>
+
+        <div id="message"></div>
+
+        <audio id="bgMusic" loop preload="auto">
+            <source src="backsound-lucu.mp3" type="audio/mpeg">
+        </audio><audio id="winMusic" preload="auto"><source src="sound-effect-kemenangan.mp3" type="audio/mpeg"></audio>
+        <div class="music-controls">
+            <button id="musicButton" onclick="toggleMusic()">🔊 MUSIK: ON</button>
+            <span class="music-label">🎵 JJ Original</span>
+        </div>
+
+    </div>
+
+    <div class="legend">🔴 🐴 Pemain 1 &nbsp;&nbsp;&nbsp; 🔵 🐴 Pemain 2</div>
+</div>
+
+<script>
+
+const bgMusic = document.getElementById("bgMusic");
+const winMusic = document.getElementById("winMusic");
+function playWinEffect(){
+  try{bgMusic.pause();bgMusic.currentTime=0;}catch(e){}
+  try{winMusic.currentTime=0;winMusic.play().catch(()=>{});}catch(e){}
+  const b=document.createElement("div"); b.className="flower-burst"; document.body.appendChild(b);
+  const a=["🌸","🌺","🌼","🌷","💮","🌻","✨","🎉"];
+  for(let i=0;i<55;i++){let f=document.createElement("span");f.className="flower";f.textContent=a[Math.floor(Math.random()*a.length)];f.style.setProperty("--x",`${(Math.random()-.5)*100}vw`);f.style.setProperty("--y",`${(Math.random()-.5)*100}vh`);f.style.setProperty("--r",`${Math.random()*720-360}deg`);f.style.animationDelay=`${Math.random()*.35}s`;b.appendChild(f)}
+  setTimeout(()=>b.remove(),2400);
+}
+const musicButton = document.getElementById("musicButton");
+let musicOn = true;
+
+bgMusic.volume = 0.42;
+
+async function startMusic(){
+    if(!musicOn) return false;
+    try{
+        bgMusic.currentTime = bgMusic.currentTime || 0;
+        await bgMusic.play();
+        musicButton.textContent = "🔊 MUSIK: ON";
+        return true;
+    }catch(e){
+        musicButton.textContent = "🔇 KLIK UNTUK MUSIK";
+        return false;
+    }
+}
+
+function toggleMusic(){
+    if(bgMusic.paused){
+        musicOn = true;
+        startMusic();
+    }else{
+        musicOn = false;
+        bgMusic.pause();
+        musicButton.textContent = "🔇 MUSIK: OFF";
+    }
+}
+
+document.addEventListener("pointerdown", startMusic, {once:true});
+document.addEventListener("keydown", startMusic, {once:true});
+
+const boardGrid=document.getElementById("boardGrid");
+const decor=document.getElementById("decor");
+const horse1=document.getElementById("horse1");
+const horse2=document.getElementById("horse2");
+const dice=document.getElementById("dice");
+const message=document.getElementById("message");
+const turnText=document.getElementById("turn");
+const rollButton=document.getElementById("rollButton");
+
+let player1=1, player2=1, currentPlayer=1;
+
+const ladders={
+    3:22,
+    8:30,
+    28:55,
+    58:77,
+    75:86,
+    80:99
+};
+
+const snakes={
+    27:5,
+    32:10,
+    48:26,
+    62:18,
+    97:78,
+    95:56
+};
+
+/* Koordinat pusat kotak dalam SVG, dalam persen */
+function cellCenter(n){
+    const row=Math.floor((n-1)/10);
+    const pos=(n-1)%10;
+    const col=(row%2===0)?pos:9-pos;
+
+    return {
+        x:col*10+5,
+        y:(9-row)*10+5
+    };
+}
+
+/* Membuat 100 kotak */
+function createBoard(){
+    boardGrid.innerHTML="";
+
+    for(let row=9;row>=0;row--){
+        let nums=[];
+        const start=row*10+1;
+
+        for(let i=0;i<10;i++) nums.push(start+i);
+        if(row%2===1) nums.reverse();
+
+        nums.forEach(n=>{
+            const cell=document.createElement("div");
+            cell.className="cell n"+((n-1)%5+1);
+
+            if(n===1) cell.classList.add("start-cell");
+            if(n===100) cell.classList.add("finish-cell");
+
+            const span=document.createElement("span");
+            span.className="cell-number";
+            span.textContent=n;
+
+            cell.appendChild(span);
+            boardGrid.appendChild(cell);
+        });
+    }
+}
+
+/* SVG helpers */
+function svgEl(tag,attrs){
+    const e=document.createElementNS("http://www.w3.org/2000/svg",tag);
+    for(const [k,v] of Object.entries(attrs)) e.setAttribute(k,v);
+    return e;
+}
+
+/* Gambar tangga */
+function drawLadder(from,to){
+    const a=cellCenter(from), b=cellCenter(to);
+
+    const dx=b.x-a.x, dy=b.y-a.y;
+    const len=Math.hypot(dx,dy);
+    const px=-dy/len*1.35;
+    const py=dx/len*1.35;
+
+    for(const offset of [-1,1]){
+        decor.appendChild(svgEl("line",{
+            x1:a.x+px*offset,y1:a.y+py*offset,
+            x2:b.x+px*offset,y2:b.y+py*offset,
+            class:"ladder-rail"
+        }));
+        decor.appendChild(svgEl("line",{
+            x1:a.x+px*offset-.45,y1:a.y+py*offset-.45,
+            x2:b.x+px*offset-.45,y2:b.y+py*offset-.45,
+            class:"ladder-highlight"
+        }));
+    }
+
+    const rungs=Math.max(4,Math.floor(len/5));
+    for(let i=1;i<rungs;i++){
+        const t=i/rungs;
+        const x=a.x+(b.x-a.x)*t;
+        const y=a.y+(b.y-a.y)*t;
+
+        decor.appendChild(svgEl("line",{
+            x1:x+px,y1:y+py,
+            x2:x-px,y2:y-py,
+            class:"rung"
+        }));
+    }
+}
+
+/* Gambar ular */
+function drawSnake(from,to,stroke){
+    const a=cellCenter(from), b=cellCenter(to);
+
+    const dx=b.x-a.x, dy=b.y-a.y;
+    const nx=-dy, ny=dx;
+    const mag=Math.hypot(nx,ny)||1;
+    const amp=Math.min(5.5,Math.max(2.8,Math.hypot(dx,dy)/7));
+
+    const c1={
+        x:a.x+dx*.30+nx/mag*amp,
+        y:a.y+dy*.30+ny/mag*amp
+    };
+    const c2={
+        x:a.x+dx*.68-nx/mag*amp,
+        y:a.y+dy*.68-ny/mag*amp
+    };
+
+    const d=`M ${a.x} ${a.y} C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${b.x} ${b.y}`;
+
+    decor.appendChild(svgEl("path",{d,class:"snake-shadow"}));
+    decor.appendChild(svgEl("path",{d,class:"snake-body",stroke}));
+
+    /* garis highlight */
+    decor.appendChild(svgEl("path",{
+        d,
+        class:"snake-stripe"
+    }));
+
+    /* kepala di titik awal */
+    const head=svgEl("ellipse",{
+        cx:a.x,cy:a.y,rx:3.0,ry:2.2,
+        fill:stroke,
+        stroke:"#411500",
+        "stroke-width":".5"
+    });
+    decor.appendChild(head);
+
+    /* mata */
+    for(const ox of [-1.05,1.05]){
+        decor.appendChild(svgEl("circle",{
+            cx:a.x+ox,cy:a.y-.8,r:.65,class:"snake-eye"
+        }));
+        decor.appendChild(svgEl("circle",{
+            cx:a.x+ox,cy:a.y-.8,r:.28,class:"snake-pupil"
+        }));
+    }
+
+    /* lidah */
+    decor.appendChild(svgEl("path",{
+        d:`M ${a.x} ${a.y+2} l -.8 1.6 M ${a.x} ${a.y+2} l .8 1.6`,
+        class:"snake-tongue"
+    }));
+}
+
+function drawDecor(){
+    decor.innerHTML="";
+
+    Object.entries(ladders).forEach(([from,to])=>{
+        drawLadder(Number(from),Number(to));
+    });
+
+    drawSnake(27,5,"#7d2ed0");
+    drawSnake(32,10,"#f09b1a");
+    drawSnake(48,26,"#138de5");
+    drawSnake(62,18,"#d52c36");
+    drawSnake(95,56,"#9b35e6");
+    drawSnake(97,78,"#19a75a");
+}
+
+/* Posisi pion: mengikuti pusat kotak */
+function setHorsePosition(horse,n){
+    const p = cellCenter(n);
+
+    /*
+     * Papan angka berada di dalam area yang dimulai
+     * dari 5.6% dan lebarnya 88.8% dari papan.
+     *
+     * Jadi posisi kuda harus dihitung terhadap area grid,
+     * bukan terhadap seluruh #board.
+     */
+    const gridOffset = 5.6;
+    const gridSize = 88.8;
+
+    /*
+     * Pusat pion tepat berada di tengah kotak.
+     * 3.1% adalah setengah ukuran pion.
+     */
+    const horseHalf = 3.0;
+
+    const left =
+        gridOffset +
+        (p.x / 100) * gridSize -
+        horseHalf;
+
+    const top =
+        gridOffset +
+        (p.y / 100) * gridSize -
+        horseHalf;
+
+    horse.style.left = left + "%";
+    horse.style.top = top + "%";
+}
+
+function updateInfo(){
+    document.getElementById("pos1").textContent=player1;
+    document.getElementById("pos2").textContent=player2;
+}
+
+function sleep(ms){
+    return new Promise(resolve=>setTimeout(resolve,ms));
+}
+
+async function jumpHorse(horse,n){
+    setHorsePosition(horse,n);
+    horse.classList.remove("jump");
+    void horse.offsetWidth;
+    horse.classList.add("jump");
+    await sleep(320);
+}
+
+async function moveHorse(player,steps){
+    const horse=player===1?horse1:horse2;
+    let pos=player===1?player1:player2;
+
+    for(let i=0;i<steps;i++){
+        pos++;
+
+        if(player===1) player1=pos;
+        else player2=pos;
+
+        updateInfo();
+        await jumpHorse(horse,pos);
+    }
+}
+
+
+/* ===== SOUND EFFECTS ===== */
+let audioCtx = null;
+
+function getAudioCtx(){
+    if(!audioCtx){
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if(!AC) return null;
+        audioCtx = new AC();
+    }
+    if(audioCtx.state === "suspended") audioCtx.resume();
+    return audioCtx;
+}
+
+function beep(freq, duration, type="sine", volume=.08, slideTo=null){
+    const ctx=getAudioCtx();
+    if(!ctx) return;
+    const osc=ctx.createOscillator();
+    const gain=ctx.createGain();
+    osc.type=type;
+    osc.frequency.setValueAtTime(freq,ctx.currentTime);
+    if(slideTo) osc.frequency.exponentialRampToValueAtTime(slideTo,ctx.currentTime+duration);
+    gain.gain.setValueAtTime(.0001,ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(volume,ctx.currentTime+.01);
+    gain.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+duration);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime+duration+.02);
+}
+
+function diceSound(){
+    beep(180,.08,"square",.055,120);
+    setTimeout(()=>beep(280,.07,"square",.045,190),55);
+}
+
+function ladderSound(){
+    [440,554,659,880].forEach((f,i)=>setTimeout(()=>beep(f,.13,"triangle",.075),i*75));
+}
+
+function snakeSound(){
+    beep(220,.35,"sawtooth",.06,70);
+    setTimeout(()=>beep(130,.25,"sawtooth",.045,55),120);
+}
+
+function winSound(){
+    [523,659,784,1047,1319].forEach((f,i)=>setTimeout(()=>beep(f,.22,"triangle",.09),i*100));
+}
+
+async function rollDice(){
+    await startMusic();
+    rollButton.disabled=true;
+    message.textContent="";
+
+    for(let i=0;i<8;i++){
+        dice.textContent="🎲 "+(Math.floor(Math.random()*6)+1);
+        await sleep(65);
+    }
+
+    const result=Math.floor(Math.random()*6)+1;
+    dice.textContent="🎲 "+result;
+    diceSound();
+
+    let pos=currentPlayer===1?player1:player2;
+
+    if(pos+result>100){
+        message.textContent="⛔ Belum bisa melewati kotak 100!";
+        await sleep(700);
+    }else{
+        message.textContent=`🐴 Pemain ${currentPlayer} melompat ${result} kotak!`;
+        await moveHorse(currentPlayer,result);
+
+        pos=currentPlayer===1?player1:player2;
+
+        if(ladders[pos]){
+            const dest=ladders[pos];
+            ladderSound();
+            message.textContent="🪜✨ Kuda menemukan tangga!";
+            await sleep(550);
+
+            if(currentPlayer===1) player1=dest;
+            else player2=dest;
+
+            updateInfo();
+            await jumpHorse(currentPlayer===1?horse1:horse2,dest);
+            message.textContent=`🪜🐴 Naik ke kotak ${dest}!`;
+        }else if(snakes[pos]){
+            const dest=snakes[pos];
+            snakeSound();
+            message.textContent="🐍 Kuda bertemu ular!";
+            await sleep(550);
+
+            if(currentPlayer===1) player1=dest;
+            else player2=dest;
+
+            updateInfo();
+            await jumpHorse(currentPlayer===1?horse1:horse2,dest);
+            message.textContent=`🐍 Kembali ke kotak ${dest}!`;
+        }
+    }
+
+    if(player1===100){
+        playWinEffect();
+        message.textContent="👑🎉 PEMAIN 1 MENANG! 🎉👑";
+        rollButton.disabled=true;
+        return;
+    }
+
+    if(player2===100){
+        playWinEffect();
+        message.textContent="👑🎉 PEMAIN 2 MENANG! 🎉👑";
+        rollButton.disabled=true;
+        return;
+    }
+
+    currentPlayer=currentPlayer===1?2:1;
+    turnText.textContent=`Giliran: 🐴 Pemain ${currentPlayer}`;
+    rollButton.disabled=false;
+}
+
+function resetGame(){
+    player1=1;
+    player2=1;
+    currentPlayer=1;
+
+    dice.textContent="🎲";
+    message.textContent="";
+    turnText.textContent="Giliran: 🐴 Pemain 1";
+    rollButton.disabled=false;
+
+    setHorsePosition(horse1,1);
+    setHorsePosition(horse2,1);
+    updateInfo();
+}
+
+/* Mulai */
+createBoard();
+drawDecor();
+setHorsePosition(horse1,1);
+setHorsePosition(horse2,1);
+updateInfo();
+</script>
+
+</body>
+</html>
