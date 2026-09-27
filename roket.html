@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rocket Arcade Deluxe</title>
+<style>
+  :root {
+    --bg: #030712;
+    --panel: #111827;
+    --text: #f3f4f6;
+    --gold: #fbbf24;
+    --accent: #3b82f6;
+    --danger: #ef4444;
+    --success: #10b981;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  header {
+    width: 100%;
+    max-width: 480px;
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(17, 24, 39, 0.95);
+    border-bottom: 1px solid #1f2937;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .back-btn {
+    color: var(--gold);
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 14px;
+  }
+  .coin-badge {
+    background: #1e293b;
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-weight: 800;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .game-container {
+    width: 100%;
+    max-width: 480px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
+  }
+
+  /* HUD STATS */
+  .hud {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--panel);
+    padding: 10px 15px;
+    border-radius: 12px 12px 0 0;
+    border: 1px solid #1f2937;
+    font-size: 13px;
+    font-weight: bold;
+  }
+  .progress-bar-wrap {
+    width: 100px;
+    height: 8px;
+    background: #374151;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .progress-bar {
+    width: 0%;
+    height: 100%;
+    background: linear-gradient(90deg, #10b981, #3b82f6);
+    transition: width 0.1s linear;
+  }
+
+  /* GAME CONTROLS (PLAY / STOP) */
+  .game-controls {
+    width: 100%;
+    display: flex;
+    gap: 8px;
+    background: var(--panel);
+    padding: 8px 12px;
+    border-left: 1px solid #1f2937;
+    border-right: 1px solid #1f2937;
+  }
+  .ctrl-btn {
+    flex: 1;
+    padding: 8px;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: opacity 0.2s;
+  }
+  .ctrl-btn:active { opacity: 0.8; }
+  .btn-play { background: var(--success); color: #fff; }
+  .btn-stop { background: var(--danger); color: #fff; }
+
+  /* CANVAS GAME */
+  #gameCanvas {
+    background: #000;
+    border-left: 2px solid #1f2937;
+    border-right: 2px solid #1f2937;
+    border-bottom: 2px solid #1f2937;
+    border-radius: 0 0 12px 12px;
+    touch-action: none;
+    width: 100%;
+    height: 420px;
+    display: block;
+  }
+
+  /* NAV TAB UTAMA */
+  .main-nav {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 10px;
+    width: 100%;
+  }
+  .nav-btn {
+    padding: 12px 5px;
+    background: #1f2937;
+    color: #9ca3af;
+    border: 1px solid #374151;
+    border-radius: 10px;
+    font-weight: bold;
+    font-size: 14px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+  }
+  .nav-btn.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: #60a5fa;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+  }
+
+  /* VIEW PANELS */
+  .view-panel {
+    width: 100%;
+    display: none;
+  }
+  .view-panel.active {
+    display: block;
+  }
+
+  /* SHOP DESIGN */
+  .shop-sub-nav {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .sub-btn {
+    flex: 1;
+    padding: 8px;
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #9ca3af;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .sub-btn.active {
+    background: var(--gold);
+    color: #000;
+  }
+
+  .shop-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .shop-card {
+    background: var(--panel);
+    border: 1px solid #1f2937;
+    border-radius: 10px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    text-align: center;
+  }
+  .shop-card.equipped {
+    border-color: #10b981;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.3);
+  }
+  .buy-btn {
+    width: 100%;
+    padding: 8px;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    background: var(--gold);
+    color: #000;
+    font-size: 12px;
+  }
+  .buy-btn.use { background: #3b82f6; color: #fff; }
+  .buy-btn.active-use { background: #10b981; color: #fff; cursor: default; }
+
+  /* LEADERBOARD TABLE */
+  .rank-card {
+    background: var(--panel);
+    border: 1px solid #1f2937;
+    border-radius: 12px;
+    padding: 15px;
+  }
+  .rank-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .rank-table th, .rank-table td {
+    padding: 10px;
+    text-align: center;
+    border-bottom: 1px solid #1f2937;
+    font-size: 14px;
+  }
+  .rank-table th { color: var(--gold); background: #1f2937; }
+
+  /* MODAL */
+  .modal {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(3, 7, 18, 0.85);
+    backdrop-filter: blur(6px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .modal.active { opacity: 1; pointer-events: auto; }
+  .modal-card {
+    background: #111827;
+    border: 2px solid var(--gold);
+    border-radius: 20px;
+    padding: 25px;
+    width: 90%;
+    max-width: 340px;
+    text-align: center;
+  }
+  .modal-title { font-size: 22px; color: var(--gold); font-weight: 900; margin-bottom: 8px; }
+  .modal-btn {
+    background: linear-gradient(135deg, #f59e0b, #ef4444);
+    color: #fff;
+    border: none;
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 900;
+    cursor: pointer;
+    margin-top: 15px;
+    width: 100%;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a href="./" class="back-btn">← Portal Game</a>
+  <h3 style="color:var(--gold)">Rocket Arcade</h3>
+  <div class="coin-badge">🪙 <span id="coin-count">0</span></div>
+</header>
+
+<div class="game-container">
+
+  <!-- VIEW 1: GAMEPLAY -->
+  <div class="view-panel active" id="view-game">
+    <div class="hud">
+      <div>Lvl <span id="lvl-display">1</span> | Skor: <span id="score-display">0</span></div>
+      <div>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar" id="progress-bar"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTROLS PLAY & STOP -->
+    <div class="game-controls">
+      <button class="ctrl-btn btn-play" onclick="startGame()">▶️ Play</button>
+      <button class="ctrl-btn btn-stop" onclick="stopGame()">⏹️ Stop</button>
+    </div>
+
+    <canvas id="gameCanvas" width="480" height="420"></canvas>
+  </div>
+
+  <!-- VIEW 2: TOKO / SHOP -->
+  <div class="view-panel" id="view-shop">
+    <div style="margin-bottom: 10px; font-weight:bold; color:var(--gold);">🛒 TOKO PERALATAN</div>
+    <div class="shop-sub-nav">
+      <button class="sub-btn active" id="btn-sub-skin" onclick="switchShopCategory('skin')">🚀 Skin Roket</button>
+      <button class="sub-btn" id="btn-sub-bg" onclick="switchShopCategory('bg')">🌌 Background</button>
+    </div>
+    <div class="shop-grid" id="shop-grid"></div>
+  </div>
+
+  <!-- VIEW 3: JUARA / LEADERBOARD -->
+  <div class="view-panel" id="view-ranks">
+    <div class="rank-card">
+      <div style="margin-bottom: 12px; font-weight:bold; color:var(--gold); text-align:center;">🏆 PAPAN JUARA</div>
+      <table class="rank-table">
+        <thead>
+          <tr>
+            <th>Pos</th>
+            <th>Pemain</th>
+            <th>Skor</th>
+          </tr>
+        </thead>
+        <tbody id="rank-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- NAVIGASI UTAMA -->
+  <div class="main-nav">
+    <button class="nav-btn active" id="nav-game" onclick="switchMainView('game')">🎮 Game</button>
+    <button class="nav-btn" id="nav-shop" onclick="switchMainView('shop')">🛒 Toko</button>
+    <button class="nav-btn" id="nav-ranks" onclick="switchMainView('ranks')">🏆 Juara</button>
+  </div>
+
+</div>
+
+<!-- MODAL GAMEOVER / WIN -->
+<div class="modal" id="game-modal">
+  <div class="modal-card">
+    <div class="modal-title" id="modal-title">MENANG!</div>
+    <p id="modal-desc" style="color:#d1d5db; font-size:13px; margin-bottom:10px;"></p>
+    <div style="font-size:18px; color:var(--gold); font-weight:bold;" id="modal-reward">+0 Koin 🪙</div>
+    <button class="modal-btn" onclick="closeModal()">Lanjut Main ➔</button>
+  </div>
+</div>
+
+<script>
+  // ================= AUDIO SYNTHESIZER =================
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  let audioCtx = null;
+
+  function initAudio() {
+    if (!audioCtx) audioCtx = new AudioCtx();
+  }
+
+  function playSound(freq, type, duration) {
+    if(!audioCtx) return;
+    try {
+      let osc = audioCtx.createOscillator();
+      let gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    } catch(e){}
+  }
+
+  function playCoinSound() {
+    playSound(800, 'sine', 0.08);
+    setTimeout(() => playSound(1200, 'sine', 0.12), 40);
+  }
+
+  function playExplodeSound() {
+    playSound(120, 'sawtooth', 0.3);
+  }
+
+  // ================= DATA & STORAGE =================
+  let coins = parseInt(localStorage.getItem('rk_coins') || '100');
+  let currentLevel = parseInt(localStorage.getItem('rk_level') || '1');
+  let score = 0;
+  let highScore = parseInt(localStorage.getItem('rk_highscore') || '0');
+  let ownedSkins = JSON.parse(localStorage.getItem('rk_skins') || '["classic"]');
+  let activeSkin = localStorage.getItem('rk_active_skin') || 'classic';
+  let ownedBgs = JSON.parse(localStorage.getItem('rk_bgs') || '["space_dark"]');
+  let activeBg = localStorage.getItem('rk_active_bg') || 'space_dark';
+
+  function saveData() {
+    localStorage.setItem('rk_coins', coins);
+    localStorage.setItem('rk_level', currentLevel);
+    localStorage.setItem('rk_highscore', Math.max(score, highScore));
+    localStorage.setItem('rk_skins', JSON.stringify(ownedSkins));
+    localStorage.setItem('rk_active_skin', activeSkin);
+    localStorage.setItem('rk_bgs', JSON.stringify(ownedBgs));
+    localStorage.setItem('rk_active_bg', activeBg);
+    updateUI();
+  }
+
+  function updateUI() {
+    document.getElementById('coin-count').innerText = coins;
+    document.getElementById('lvl-display').innerText = currentLevel;
+    document.getElementById('score-display').innerText = score;
+  }
+
+  // ================= SHOP CATALOG DATA =================
+  const skinsData = [
+    { id: 'classic', name: 'Alpha Red', price: 0, body: '#ef4444', wing: '#991b1b', cockpit: '#38bdf8' },
+    { id: 'neon', name: 'Cyber Cyan', price: 150, body: '#06b6d4', wing: '#0891b2', cockpit: '#f43f5e' },
+    { id: 'gold', name: 'Golden Ace', price: 300, body: '#fbbf24', wing: '#d97706', cockpit: '#ffffff' },
+    { id: 'alien', name: 'Alien Green', price: 500, body: '#10b981', wing: '#047857', cockpit: '#a855f7' }
+  ];
+
+  const bgsData = [
+    { id: 'space_dark', name: 'Luar Angkasa', price: 0, color: '#030712', starColor: '#ffffff' },
+    { id: 'nebula_red', name: 'Nebula Merah', price: 200, color: '#2a0813', starColor: '#fca5a5' },
+    { id: 'galaxy_purple', name: 'Galaksi Ungu', price: 400, color: '#1a0933', starColor: '#e9d5ff' },
+    { id: 'matrix_green', name: 'Cyber Matrix', price: 750, color: '#022013', starColor: '#86efac' }
+  ];
+
+  // ================= GAME ENGINE =================
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+
+  let isPlaying = false;
+  let distanceToFinish = 1000;
+  let currentDistance = 0;
+  let playerX = canvas.width / 2;
+  let playerY = canvas.height - 70;
+
+  let obstacles = [];
+  let coinPickups = [];
+  let stars = [];
+  let animTick = 0;
+
+  for(let i=0; i<50; i++){
+    stars.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      size: Math.random() * 2 + 1,
+      speed: Math.random() * 2 + 1
+    });
+  }
+
+  function startGame() {
+    initAudio();
+    if(!isPlaying) {
+      distanceToFinish = 800 + (currentLevel * 200);
+      currentDistance = 0;
+      score = 0;
+      playerX = canvas.width / 2;
+      obstacles = [];
+      coinPickups = [];
+      isPlaying = true;
+    }
+  }
+
+  function stopGame() {
+    isPlaying = false;
+  }
+
+  function movePlayer(x) {
+    if(!isPlaying) return;
+    const rect = canvas.getBoundingClientRect();
+    playerX = x - rect.left;
+  }
+
+  canvas.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    movePlayer(e.touches[0].clientX);
+  });
+  canvas.addEventListener('mousemove', (e) => {
+    if(e.buttons === 1 || isPlaying) movePlayer(e.clientX);
+  });
+
+  function update() {
+    if(!isPlaying) return;
+    animTick++;
+
+    currentDistance += 2.5;
+    score = Math.floor(currentDistance);
+    let progress = Math.min(100, (currentDistance / distanceToFinish) * 100);
+    document.getElementById('progress-bar').style.width = progress + '%';
+
+    if(currentDistance >= distanceToFinish) {
+      winGame();
+      return;
+    }
+
+    stars.forEach(star => {
+      star.y += star.speed;
+      if(star.y > canvas.height) star.y = 0;
+    });
+
+    playerX = Math.max(25, Math.min(canvas.width - 25, playerX));
+
+    // Obstacles (Musuh)
+    obstacles.forEach((obs, index) => {
+      obs.y += obs.speed;
+      obs.rot += 0.03;
+      let dx = playerX - obs.x;
+      let dy = playerY - obs.y;
+      if(Math.sqrt(dx*dx + dy*dy) < obs.size + 14) {
+        playExplodeSound();
+        gameOver();
+      }
+      if(obs.y > canvas.height + 40) obstacles.splice(index, 1);
+    });
+
+    // Coins
+    coinPickups.forEach((c, index) => {
+      c.y += c.speed;
+      let dx = playerX - c.x;
+      let dy = playerY - c.y;
+      if(Math.sqrt(dx*dx + dy*dy) < 22) {
+        coins += 5;
+        playCoinSound();
+        saveData();
+        coinPickups.splice(index, 1);
+      }
+      if(c.y > canvas.height + 20) coinPickups.splice(index, 1);
+    });
+
+    // Spawning Musuh
+    if(Math.random() < 0.04 + (currentLevel * 0.005)) {
+      obstacles.push({
+        x: Math.random() * (canvas.width - 50) + 25,
+        y: -40,
+        size: 22,
+        speed: Math.random() * 2 + 2.5 + (currentLevel * 0.2),
+        rot: Math.random() * Math.PI,
+        type: Math.random() > 0.5 ? 'alien' : 'monster'
+      });
+    }
+
+    if(Math.random() < 0.035) {
+      coinPickups.push({
+        x: Math.random() * (canvas.width - 30) + 15,
+        y: -20,
+        speed: 3
+      });
+    }
+
+    updateUI();
+  }
+
+  // ================= DESAIN DESAIN BARU: ROKET & MUSUH =================
+
+  // DESAIN ROKET FUTURISTIK
+  function drawRocket(x, y, skinId) {
+    const skin = skinsData.find(s => s.id === skinId) || skinsData[0];
+    ctx.save();
+    ctx.translate(x, y);
+
+    // 1. Api Utama & Thruster Glow
+    let flameHeight = 16 + Math.sin(animTick * 0.6) * 5;
+    ctx.fillStyle = '#f97316';
+    ctx.beginPath();
+    ctx.moveTo(-6, 16); ctx.lineTo(0, 16 + flameHeight); ctx.lineTo(6, 16);
+    ctx.fill();
+
+    ctx.fillStyle = '#fef08a';
+    ctx.beginPath();
+    ctx.moveTo(-3, 16); ctx.lineTo(0, 16 + (flameHeight * 0.6)); ctx.lineTo(3, 16);
+    ctx.fill();
+
+    // 2. Sayap Samping
+    ctx.fillStyle = skin.wing;
+    ctx.beginPath();
+    ctx.moveTo(-10, 5); ctx.lineTo(-22, 18); ctx.lineTo(-8, 16); ctx.closePath();
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(10, 5); ctx.lineTo(22, 18); ctx.lineTo(8, 16); ctx.closePath();
+    ctx.fill();
+
+    // 3. Badan Roket Aerodinamis
+    ctx.fillStyle = skin.body;
+    ctx.beginPath();
+    ctx.moveTo(0, -28);
+    ctx.bezierCurveTo(12, -10, 12, 10, 9, 18);
+    ctx.lineTo(-9, 18);
+    ctx.bezierCurveTo(-12, 10, -12, -10, 0, -28);
+    ctx.fill();
+
+    // 4. Kaca Kokpit
+    ctx.fillStyle = skin.cockpit;
+    ctx.beginPath();
+    ctx.ellipse(0, -6, 5, 8, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Kilauan Kaca
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.beginPath();
+    ctx.arc(-1, -8, 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  // DESAIN MUSUH MONSTER BULAN BARU
+  function drawMoonMonster(obs) {
+    ctx.save();
+    ctx.translate(obs.x, obs.y);
+
+    if(obs.type === 'alien') {
+      // Alien Tentakel & Mata
+      ctx.fillStyle = '#8b5cf6';
+      ctx.beginPath();
+      ctx.arc(0, 0, obs.size, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Tentakel Melayang
+      let tentacleOffset = Math.sin(animTick * 0.2) * 3;
+      ctx.strokeStyle = '#7c3aed';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(-10, 10); ctx.lineTo(-14, 22 + tentacleOffset);
+      ctx.moveTo(0, 12); ctx.lineTo(0, 24 - tentacleOffset);
+      ctx.moveTo(10, 10); ctx.lineTo(14, 22 + tentacleOffset);
+      ctx.stroke();
+
+      // Mata Tunggal Besar
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath(); ctx.arc(0, -2, 8, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#ef4444';
+      ctx.beginPath(); ctx.arc(0, -2, 4, 0, Math.PI * 2); ctx.fill();
+
+    } else {
+      // Monster Batu Bulan Berduri
+      ctx.rotate(obs.rot);
+      ctx.fillStyle = '#64748b';
+      
+      // Bentuk Bintang Berduri
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        ctx.lineTo(Math.cos((1 + i * 2) * Math.PI / 6) * obs.size, Math.sin((1 + i * 2) * Math.PI / 6) * obs.size);
+        ctx.lineTo(Math.cos((2 + i * 2) * Math.PI / 6) * (obs.size * 0.6), Math.sin((2 + i * 2) * Math.PI / 6) * (obs.size * 0.6));
+      }
+      ctx.closePath();
+      ctx.fill();
+
+      // Mata Merah Marah
+      ctx.fillStyle = '#f59e0b';
+      ctx.beginPath();
+      ctx.arc(-5, -3, 3, 0, Math.PI * 2);
+      ctx.arc(5, -3, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
+  function drawCoin(x, y) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.fillStyle = '#fbbf24';
+    ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#000';
+    ctx.font = 'bold 9px sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('$', 0, 1);
+    ctx.restore();
+  }
+
+  function draw() {
+    const activeBgData = bgsData.find(b => b.id === activeBg) || bgsData[0];
+    ctx.fillStyle = activeBgData.color;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = activeBgData.starColor;
+    stars.forEach(s => {
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2); ctx.fill();
+    });
+
+    if(isPlaying) {
+      coinPickups.forEach(c => drawCoin(c.x, c.y));
+      obstacles.forEach(obs => drawMoonMonster(obs));
+      drawRocket(playerX, playerY, activeSkin);
+    } else {
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.font = 'bold 16px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Klik ▶️ Play Untuk Mulai Main', canvas.width/2, canvas.height/2);
+    }
+  }
+
+  function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  function winGame() {
+    isPlaying = false;
+    let reward = 50 + (currentLevel * 15);
+    coins += reward;
+    currentLevel++;
+    saveData();
+
+    document.getElementById('modal-title').innerText = '🏆 MENANG!';
+    document.getElementById('modal-desc').innerText = `Berhasil melewati Monster Bulan!`;
+    document.getElementById('modal-reward').innerText = `+${reward} Koin 🪙`;
+    document.getElementById('game-modal').classList.add('active');
+  }
+
+  function gameOver() {
+    isPlaying = false;
+    saveData();
+    document.getElementById('modal-title').innerText = '💥 ROKET HANCUR!';
+    document.getElementById('modal-desc').innerText = 'Kamu menabrak Makhluk Bulan!';
+    document.getElementById('modal-reward').innerText = '+0 Koin 🪙';
+    document.getElementById('game-modal').classList.add('active');
+  }
+
+  function closeModal() {
+    document.getElementById('game-modal').classList.remove('active');
+    startGame();
+  }
+
+  // ================= VIEW & SHOP SWITCHER =================
+  let currentShopCategory = 'skin';
+
+  function switchMainView(view) {
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(`nav-${view}`).classList.add('active');
+
+    document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById(`view-${view}`).classList.add('active');
+
+    if(view === 'shop') {
+      renderShop();
+    } else if(view === 'ranks') {
+      renderRanks();
+    }
+  }
+
+  function switchShopCategory(cat) {
+    currentShopCategory = cat;
+    document.getElementById('btn-sub-skin').classList.toggle('active', cat === 'skin');
+    document.getElementById('btn-sub-bg').classList.toggle('active', cat === 'bg');
+    renderShop();
+  }
+
+  function renderShop() {
+    const grid = document.getElementById('shop-grid');
+    grid.innerHTML = '';
+
+    if(currentShopCategory === 'skin') {
+      skinsData.forEach(s => {
+        const isOwned = ownedSkins.includes(s.id);
+        const isEquipped = activeSkin === s.id;
+        let btnHtml = isEquipped 
+          ? `<button class="buy-btn active-use">Dipakai</button>`
+          : isOwned 
+            ? `<button class="buy-btn use" onclick="equipSkin('${s.id}')">Pakai</button>`
+            : `<button class="buy-btn" onclick="buySkin('${s.id}', ${s.price})">Beli 🪙${s.price}</button>`;
+
+        grid.innerHTML += `
+          <div class="shop-card ${isEquipped ? 'equipped' : ''}">
+            <div style="font-size:30px;">🚀</div>
+            <div style="font-weight:bold; font-size:12px;">${s.name}</div>
+            ${btnHtml}
+          </div>
+        `;
+      });
+    } else {
+      bgsData.forEach(b => {
+        const isOwned = ownedBgs.includes(b.id);
+        const isEquipped = activeBg === b.id;
+        let btnHtml = isEquipped 
+          ? `<button class="buy-btn active-use">Dipakai</button>`
+          : isOwned 
+            ? `<button class="buy-btn use" onclick="equipBg('${b.id}')">Pakai</button>`
+            : `<button class="buy-btn" onclick="buyBg('${b.id}', ${b.price})">Beli 🪙${b.price}</button>`;
+
+        grid.innerHTML += `
+          <div class="shop-card ${isEquipped ? 'equipped' : ''}">
+            <div style="background:${b.color}; width:100%; height:30px; border-radius:6px;"></div>
+            <div style="font-weight:bold; font-size:12px;">${b.name}</div>
+            ${btnHtml}
+          </div>
+        `;
+      });
+    }
+  }
+
+  function buySkin(id, price) {
+    if(coins >= price) {
+      coins -= price; ownedSkins.push(id); activeSkin = id;
+      saveData(); renderShop();
+    } else alert("Koin tidak cukup!");
+  }
+  function equipSkin(id) { activeSkin = id; saveData(); renderShop(); }
+
+  function buyBg(id, price) {
+    if(coins >= price) {
+      coins -= price; ownedBgs.push(id); activeBg = id;
+      saveData(); renderShop();
+    } else alert("Koin tidak cukup!");
+  }
+  function equipBg(id) { activeBg = id; saveData(); renderShop(); }
+
+  function renderRanks() {
+    const tbody = document.getElementById('rank-tbody');
+    tbody.innerHTML = `
+      <tr><td>🥇 1</td><td>Kamu (Terbaik)</td><td>${highScore}</td></tr>
+      <tr><td>🥈 2</td><td>Kosmonot Pro</td><td>1,250</td></tr>
+      <tr><td>🥉 3</td><td>StarRider</td><td>980</td></tr>
+      <tr><td>4</td><td>GalaxyHunter</td><td>720</td></tr>
+      <tr><td>5</td><td>AstroBoy</td><td>510</td></tr>
+    `;
+  }
+
+  // START LOOP
+  updateUI();
+  loop();
+</script>
+</body>
+</html>
