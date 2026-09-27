@@ -76,6 +76,30 @@
     font-size: 12px;
     font-weight: bold;
   }
+  
+  /* MENU PILIH LEVEL STYLING */
+  .level-select-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .level-select-wrapper label {
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--gold);
+  }
+  .level-select-dropdown {
+    background: #1e2b50;
+    color: var(--gold);
+    border: 1px solid #334367;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 14px;
+    cursor: pointer;
+    outline: none;
+  }
+
   #board {
     display: grid;
     gap: 4px;
@@ -106,12 +130,13 @@
     gap: 10px;
     justify-content: center;
     margin-top: 15px;
+    flex-wrap: wrap;
   }
   button.action-btn {
     background: linear-gradient(135deg, #f6c453, #ff8c4a);
     color: #18120a;
     border: none;
-    padding: 10px 18px;
+    padding: 10px 16px;
     border-radius: 10px;
     font-weight: bold;
     cursor: pointer;
@@ -120,6 +145,7 @@
     opacity: 0.5;
     cursor: not-allowed;
   }
+
   #flower-canvas {
     position: fixed;
     top: 0;
@@ -223,7 +249,14 @@
 <div class="container">
   <div class="level-card">
     <div class="level-info">
-      <h3>Level <span id="lvl-num">1</span> / 1000</h3>
+      <!-- PILIH LEVEL DROPDOWN MENU -->
+      <div class="level-select-wrapper">
+        <label for="level-select">Level:</label>
+        <select id="level-select" class="level-select-dropdown" onchange="jumpToLevel(this.value)">
+          <!-- Opsi level 1 - 1000 dimasukkan secara dinamis lewat JS -->
+        </select>
+      </div>
+
       <span class="char-tag" id="char-name">Doraemon</span>
     </div>
     <p id="grid-info" style="font-size:12px; color:#9ba8c7;">Ukuran: 3x3 | Kotak: 9</p>
@@ -232,9 +265,9 @@
   <div id="board"></div>
 
   <div class="controls">
-    <button class="action-btn" id="prev-btn" onclick="changeLevel(-1)">Level Sebelumnya</button>
-    <button class="action-btn" id="reset-btn" onclick="resetGame()">Acak Ulang</button>
-    <button class="action-btn" id="next-btn" onclick="changeLevel(1)">Level Berikutnya</button>
+    <button class="action-btn" id="prev-btn" onclick="changeLevel(-1)">← Level Prev</button>
+    <button class="action-btn" id="reset-btn" onclick="resetGame()">🔄 Acak Ulang</button>
+    <button class="action-btn" id="next-btn" onclick="changeLevel(1)">Level Next →</button>
   </div>
 </div>
 
@@ -431,13 +464,19 @@
   let tiles = [];
   let emptyIdx = 0;
 
+  // Render opsi dropdown 1 - 1000
+  function initLevelDropdown() {
+    const select = document.getElementById('level-select');
+    select.innerHTML = '';
+    for (let i = 1; i <= 1000; i++) {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.innerText = `Lvl ${i}`;
+      select.appendChild(opt);
+    }
+  }
+
   function getLevelConfig(lvl) {
-    // 1. Ukuran Grid bertambah seiring level:
-    // Level 1 - 5   : 3x3 (9 Kotak)
-    // Level 6 - 20  : 4x4 (16 Kotak)
-    // Level 21 - 50 : 5x5 (25 Kotak)
-    // Level 51 - 100: 6x6 (36 Kotak)
-    // Level > 100   : bertambah terus hingga max 10x10
     let size = 3;
     if (lvl > 100) size = Math.min(10, 6 + Math.floor((lvl - 100) / 100));
     else if (lvl > 50) size = 6;
@@ -445,7 +484,6 @@
     else if (lvl > 5) size = 4;
 
     const name = characterNames[(lvl - 1) % characterNames.length];
-    // Gambar unik dari Unsplash berdasarkan ID level & nama karakter
     const imgUrl = `https://picsum.photos/seed/puzzle-lvl-${lvl}/600/600`;
 
     return { size, name, imgUrl };
@@ -455,7 +493,7 @@
     const config = getLevelConfig(currentLevel);
     gridSize = config.size;
 
-    document.getElementById('lvl-num').innerText = currentLevel;
+    document.getElementById('level-select').value = currentLevel;
     document.getElementById('char-name').innerText = config.name;
     document.getElementById('grid-info').innerText = `Ukuran: ${gridSize}x${gridSize} | Total Kotak: ${gridSize * gridSize}`;
     
@@ -470,7 +508,6 @@
     tiles = Array.from({ length: totalTiles }, (_, i) => i);
     emptyIdx = totalTiles - 1;
 
-    // Mengacak papan sesuai level
     const shuffleSteps = currentLevel * 12;
     for (let i = 0; i < shuffleSteps; i++) {
       const validMoves = getValidMoves();
@@ -572,8 +609,15 @@
     loadLevel();
   }
 
+  function jumpToLevel(lvl) {
+    playClickSound();
+    currentLevel = parseInt(lvl, 10);
+    loadLevel();
+  }
+
   window.addEventListener('click', () => initAudio(), { once: true });
 
+  initLevelDropdown();
   loadLevel();
 </script>
 
