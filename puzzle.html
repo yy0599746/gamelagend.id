@@ -91,7 +91,7 @@
   .tile {
     background-size: cover;
     background-position: center;
-    border-radius: 6px;
+    border-radius: 4px;
     cursor: pointer;
     user-select: none;
     transition: transform 0.1s ease;
@@ -120,7 +120,6 @@
     opacity: 0.5;
     cursor: not-allowed;
   }
-  /* Canvas untuk Efek Bunga */
   #flower-canvas {
     position: fixed;
     top: 0;
@@ -131,7 +130,7 @@
     z-index: 998;
   }
 
-  /* ================= DESAIN MODAL KEMENANGAN ================= */
+  /* MODAL POPUP */
   .modal-overlay {
     position: fixed;
     top: 0;
@@ -194,10 +193,6 @@
     font-weight: 900;
     cursor: pointer;
     box-shadow: 0 5px 15px rgba(255, 140, 74, 0.3);
-    transition: transform 0.1s ease;
-  }
-  .modal-btn:active {
-    transform: scale(0.95);
   }
   @keyframes bounce {
     from { transform: translateY(0); }
@@ -214,7 +209,7 @@
   <div class="modal-box">
     <div class="modal-icon">🌸 🏆 🌸</div>
     <div class="modal-title">LUAR BIASA!</div>
-    <div class="modal-sub" id="win-desc">Kamu berhasil menyelesaikan Level 1!</div>
+    <div class="modal-sub" id="win-desc">Kamu berhasil menyelesaikan Level!</div>
     <button class="modal-btn" onclick="nextLevelFromModal()">LANJUT LEVEL NEXT ➔</button>
   </div>
 </div>
@@ -231,7 +226,7 @@
       <h3>Level <span id="lvl-num">1</span> / 1000</h3>
       <span class="char-tag" id="char-name">Doraemon</span>
     </div>
-    <p id="grid-info" style="font-size:12px; color:#9ba8c7;">Ukuran: 3x3 | Kesulitan: Sangat Mudah</p>
+    <p id="grid-info" style="font-size:12px; color:#9ba8c7;">Ukuran: 3x3 | Kotak: 9</p>
   </div>
 
   <div id="board"></div>
@@ -424,13 +419,11 @@
     }
   }
 
-  // ================= GAME LOGIC =================
-  const characters = [
-    { name: 'Doraemon', img: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=600&auto=format&fit=crop' },
-    { name: 'Roronoa Zoro', img: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop' },
-    { name: 'Monkey D. Luffy', img: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&auto=format&fit=crop' },
-    { name: 'Naruto Uzumaki', img: 'https://images.unsplash.com/photo-1563089145-599997674d42?w=600&auto=format&fit=crop' },
-    { name: 'Goku', img: 'https://images.unsplash.com/photo-1535223289827-42f1e9919769?w=600&auto=format&fit=crop' }
+  // ================= DAFTAR KARAKTER & LOGIKA GAME =================
+  const characterNames = [
+    "Doraemon", "Roronoa Zoro", "Monkey D. Luffy", "Naruto Uzumaki", "Goku", 
+    "Pikachu", "Super Mario", "Sonic the Hedgehog", "Kakashi Hatake", "Vegeta",
+    "Saitama", "Tanjiro Kamado", "Nezuko", "Satoru Gojo", "Eren Yeager"
   ];
 
   let currentLevel = 1;
@@ -439,15 +432,23 @@
   let emptyIdx = 0;
 
   function getLevelConfig(lvl) {
+    // 1. Ukuran Grid bertambah seiring level:
+    // Level 1 - 5   : 3x3 (9 Kotak)
+    // Level 6 - 20  : 4x4 (16 Kotak)
+    // Level 21 - 50 : 5x5 (25 Kotak)
+    // Level 51 - 100: 6x6 (36 Kotak)
+    // Level > 100   : bertambah terus hingga max 10x10
     let size = 3;
-    let diff = "Mudah";
-    if (lvl > 800) { size = 7; diff = "Ekstrem / Legend"; }
-    else if (lvl > 500) { size = 6; diff = "Sangat Sulit"; }
-    else if (lvl > 250) { size = 5; diff = "Sulit"; }
-    else if (lvl > 100) { size = 4; diff = "Sedang"; }
+    if (lvl > 100) size = Math.min(10, 6 + Math.floor((lvl - 100) / 100));
+    else if (lvl > 50) size = 6;
+    else if (lvl > 20) size = 5;
+    else if (lvl > 5) size = 4;
 
-    const char = characters[(lvl - 1) % characters.length];
-    return { size, diff, char };
+    const name = characterNames[(lvl - 1) % characterNames.length];
+    // Gambar unik dari Unsplash berdasarkan ID level & nama karakter
+    const imgUrl = `https://picsum.photos/seed/puzzle-lvl-${lvl}/600/600`;
+
+    return { size, name, imgUrl };
   }
 
   function loadLevel() {
@@ -455,8 +456,8 @@
     gridSize = config.size;
 
     document.getElementById('lvl-num').innerText = currentLevel;
-    document.getElementById('char-name').innerText = config.char.name;
-    document.getElementById('grid-info').innerText = `Ukuran: ${gridSize}x${gridSize} | Kesulitan: ${config.diff}`;
+    document.getElementById('char-name').innerText = config.name;
+    document.getElementById('grid-info').innerText = `Ukuran: ${gridSize}x${gridSize} | Total Kotak: ${gridSize * gridSize}`;
     
     document.getElementById('prev-btn').disabled = currentLevel === 1;
     document.getElementById('next-btn').disabled = currentLevel === 1000;
@@ -469,7 +470,8 @@
     tiles = Array.from({ length: totalTiles }, (_, i) => i);
     emptyIdx = totalTiles - 1;
 
-    const shuffleSteps = currentLevel * 10;
+    // Mengacak papan sesuai level
+    const shuffleSteps = currentLevel * 12;
     for (let i = 0; i < shuffleSteps; i++) {
       const validMoves = getValidMoves();
       const randomMove = validMoves[Math.floor(Math.random() * validMoves.length)];
@@ -477,7 +479,7 @@
       emptyIdx = randomMove;
     }
 
-    renderBoard(config.char.img);
+    renderBoard(config.imgUrl);
   }
 
   function resetGame() {
@@ -532,7 +534,7 @@
       playClickSound();
       [tiles[emptyIdx], tiles[index]] = [tiles[index], tiles[emptyIdx]];
       emptyIdx = index;
-      renderBoard(getLevelConfig(currentLevel).char.img);
+      renderBoard(getLevelConfig(currentLevel).imgUrl);
 
       if (checkWin()) {
         setTimeout(() => {
